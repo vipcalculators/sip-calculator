@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIP Calculator</title>
+  <link ></link>
+  
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="calculator-container">
+    <h1 class="header">SIP Calculator Free Online Tool</h1>
+    <div class="content">
+      <div class="block input-block">
+        <label for="sip-amount">SIP Amount (₹):</label>
+        <input type="number" id="sip-amount" value="5000">
+        <input type="range" id="sip-amount-slider" min="1000" max="100000" step="1000" value="5000">
+
+        <label for="rate-of-return">Expected Rate of Return (p.a.):</label>
+        <input type="number" id="rate-of-return" value="12" step="0.1">
+        <input type="range" id="rate-of-return-slider" min="1" max="30" step="0.1" value="12">
+
+        <label for="time-period">Time Period (Years):</label>
+        <input type="number" id="time-period" value="10">
+        <input type="range" id="time-period-slider" min="1" max="30" value="10">
+      </div>
+
+      <div class="block result-block">
+        <p class="output"><strong>Invested Amount:</strong> ₹<span id="invested-amount">0</span></p>
+        <p class="output"><strong>Estimated Returns:</strong> ₹<span id="estimated-returns">0</span></p>
+        <p class="output"><strong>Total Future Value:</strong> ₹<span id="total-future-value">0</span></p>
+      </div>
+
+      <div class="block chart-block">
+        <canvas id="pie-chart"></canvas>
+      </div>
+    </div>
+    <div class="charts">
+      <canvas id="bar-chart"></canvas>
+    </div>
+    <div class="footer">© 2024 Vip Calculator. All Rights Reserved.</div>
+  </div>
+
+  <script>
+    let pieChartInstance = null;
+    let barChartInstance = null;
+
+    const sipAmountInput = document.getElementById('sip-amount');
+    const sipAmountSlider = document.getElementById('sip-amount-slider');
+    const rateOfReturnInput = document.getElementById('rate-of-return');
+    const rateOfReturnSlider = document.getElementById('rate-of-return-slider');
+    const timePeriodInput = document.getElementById('time-period');
+    const timePeriodSlider = document.getElementById('time-period-slider');
+    const investedAmountDisplay = document.getElementById('invested-amount');
+    const estimatedReturnsDisplay = document.getElementById('estimated-returns');
+    const totalFutureValueDisplay = document.getElementById('total-future-value');
+
+    sipAmountInput.addEventListener('input', syncInputSlider);
+    sipAmountSlider.addEventListener('input', syncSliderInput);
+    rateOfReturnInput.addEventListener('input', syncInputSlider);
+    rateOfReturnSlider.addEventListener('input', syncSliderInput);
+    timePeriodInput.addEventListener('input', syncInputSlider);
+    timePeriodSlider.addEventListener('input', syncSliderInput);
+
+    function syncInputSlider() {
+      sipAmountSlider.value = sipAmountInput.value;
+      rateOfReturnSlider.value = rateOfReturnInput.value;
+      timePeriodSlider.value = timePeriodInput.value;
+      calculate();
+    }
+
+    function syncSliderInput() {
+      sipAmountInput.value = sipAmountSlider.value;
+      rateOfReturnInput.value = rateOfReturnSlider.value;
+      timePeriodInput.value = timePeriodSlider.value;
+      calculate();
+    }
+
+    function calculate() {
+      const sipAmount = parseFloat(sipAmountInput.value);
+      const rateOfReturn = parseFloat(rateOfReturnInput.value) / 100;
+      const timePeriod = parseInt(timePeriodInput.value);
+      const totalMonths = timePeriod * 12;
+      const monthlyRate = rateOfReturn / 12;
+      const investedAmount = sipAmount * totalMonths;
+      const futureValue = sipAmount * (((Math.pow(1 + monthlyRate, totalMonths) - 1) / monthlyRate) * (1 + monthlyRate));
+      const estimatedReturns = futureValue - investedAmount;
+
+      investedAmountDisplay.textContent = investedAmount.toFixed(0);
+      estimatedReturnsDisplay.textContent = estimatedReturns.toFixed(0);
+      totalFutureValueDisplay.textContent = futureValue.toFixed(0);
+
+      updatePieChart(investedAmount, estimatedReturns);
+      updateBarChart(investedAmount, estimatedReturns, timePeriod);
+    }
+
+    function updatePieChart(investedAmount, estimatedReturns) {
+      const ctx = document.getElementById('pie-chart').getContext('2d');
+      if (pieChartInstance) pieChartInstance.destroy();
+      pieChartInstance = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: ['Invested Amount', 'Estimated Returns'],
+          datasets: [{
+            data: [investedAmount, estimatedReturns],
+            backgroundColor: ['#4CAF50', '#FFC107'],
+          }]
+        }
+      });
+    }
+
+    function updateBarChart(investedAmount, estimatedReturns, timePeriod) {
+      const labels = Array.from({ length: timePeriod }, (_, i) => `Year ${i + 1}`);
+      const investedData = Array(timePeriod).fill(investedAmount / timePeriod);
+      const returnsData = Array(timePeriod).fill(estimatedReturns / timePeriod);
+
+      const ctx = document.getElementById('bar-chart').getContext('2d');
+      if (barChartInstance) barChartInstance.destroy();
+      barChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            { label: 'Invested Amount', data: investedData, backgroundColor: '#4CAF50' },
+            { label: 'Estimated Returns', data: returnsData, backgroundColor: '#FFC107' }
+          ]
+        },
+        options: {
+          scales: {
+            x: { stacked: true },
+            y: { stacked: true }
+          }
+        }
+      });
+    }
+
+    calculate();
+  </script>
+</body>
+</html>
